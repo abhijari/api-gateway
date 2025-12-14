@@ -1,0 +1,25 @@
+{
+  "name": "api-gateway-platform",
+  "version": "1.0.0",
+  "description": "Mini AWS API Gateway clone",
+  "description": "A full-stack API Gateway platform with reverse proxy, API key management, rate limiting, and usage analytics",
+  "private": true,
+  "workspaces": [
+    "gateway",
+    "dashboard",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=gateway\" \"npm run dev --workspace=dashboard\"",
+    "build": "npm run build --workspace=gateway && npm run build --workspace=dashboard",
+    "lint": "npm run lint --workspace=gateway && npm run lint --workspace=dashboard"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  }
+}
+

@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?   @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  apiKeys       ApiKey[]
+  
+  @@map("users")
+}
+
+model ApiKey {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  key             String      @unique
+  active          Boolean     @default(true)
+  limitPerMinute  Int         @default(60) @map("limit_per_minute")
+  limitPerDay     Int         @default(10000) @map("limit_per_day")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs       UsageLog[]
+  
+  @@map("api_keys")
+}
+
+model UsageLog {
+  id          String    @id @default(uuid())
+  apiKeyId    String    @map("api_key_id")
+  path        String
+  statusCode  Int       @map("status_code")
+  latencyMs   Int       @map("latency_ms")
+  timestamp   DateTime  @default(now())
+  
+  apiKey      ApiKey    @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  
+  @@index([apiKeyId])
+  @@index([timestamp])
+  @@map("usage_logs")
+}
+
