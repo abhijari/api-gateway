@@ -38,7 +38,7 @@ proxyRouter.all('/*', async (req: RequestWithApiKey, res: Response) => {
             latencyMs,
           },
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error('Failed to log usage:', err);
         });
     }
@@ -72,7 +72,7 @@ proxyRouter.all('/*', async (req: RequestWithApiKey, res: Response) => {
             latencyMs: 0,
           },
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error('Failed to log usage:', err);
         });
     }

@@ -30,16 +30,40 @@ export const rateLimitMiddleware = async (
       await redis.expire(minuteKey, 60); // Expire after 60 seconds
     }
 
-    // Check day limit
+    // Calculate reset times
+    const minuteReset = Math.ceil((now + 60000) / 1000);
+    const dayReset = Math.ceil((now + (86400000 - (now % 86400000))) / 1000);
+
+    // Check if minute limit exceeded BEFORE incrementing day counter
+    if (minuteCount > limitPerMinute) {
+      // Decrement the minute counter since we're rejecting this request
+      await redis.decr(minuteKey);
+      
+      // Set rate limit headers (we need to get current day count for headers)
+      const currentDayCount = await redis.get(dayKey);
+      const dayCount = currentDayCount ? parseInt(currentDayCount) : 0;
+      
+      res.setHeader('X-RateLimit-Limit-Minute', limitPerMinute.toString());
+      res.setHeader('X-RateLimit-Remaining-Minute', '0');
+      res.setHeader('X-RateLimit-Reset-Minute', minuteReset.toString());
+      res.setHeader('X-RateLimit-Limit-Day', limitPerDay.toString());
+      res.setHeader('X-RateLimit-Remaining-Day', Math.max(0, limitPerDay - dayCount).toString());
+      res.setHeader('X-RateLimit-Reset-Day', dayReset.toString());
+      
+      res.status(429).json({
+        error: 'Too Many Requests',
+        message: `Rate limit exceeded: ${limitPerMinute} requests per minute`,
+        retryAfter: 60,
+      });
+      return;
+    }
+
+    // Only increment day counter if minute limit passed
     const dayCount = await redis.incr(dayKey);
     if (dayCount === 1) {
       const secondsUntilMidnight = Math.ceil((86400000 - (now % 86400000)) / 1000);
       await redis.expire(dayKey, secondsUntilMidnight);
     }
-
-    // Calculate reset times
-    const minuteReset = Math.ceil((now + 60000) / 1000);
-    const dayReset = Math.ceil((now + (86400000 - (now % 86400000))) / 1000);
 
     // Set rate limit headers
     res.setHeader('X-RateLimit-Limit-Minute', limitPerMinute.toString());
@@ -49,17 +73,11 @@ export const rateLimitMiddleware = async (
     res.setHeader('X-RateLimit-Remaining-Day', Math.max(0, limitPerDay - dayCount).toString());
     res.setHeader('X-RateLimit-Reset-Day', dayReset.toString());
 
-    // Check if limits exceeded
-    if (minuteCount > limitPerMinute) {
-      res.status(429).json({
-        error: 'Too Many Requests',
-        message: `Rate limit exceeded: ${limitPerMinute} requests per minute`,
-        retryAfter: 60,
-      });
-      return;
-    }
-
+    // Check if day limit exceeded
     if (dayCount > limitPerDay) {
+      // Decrement the day counter since we're rejecting this request
+      await redis.decr(dayKey);
+      
       res.status(429).json({
         error: 'Too Many Requests',
         message: `Rate limit exceeded: ${limitPerDay} requests per day`,
@@ -75,4 +93,3 @@ export const rateLimitMiddleware = async (
     next();
   }
 };
-
