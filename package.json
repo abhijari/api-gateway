@@ -1,7 +1,6 @@
 {
   "name": "api-gateway-platform",
   "version": "1.0.0",
-  "description": "Mini AWS API Gateway clone",
   "description": "A full-stack API Gateway platform with reverse proxy, API key management, rate limiting, and usage analytics",
   "private": true,
   "workspaces": [
@@ -16,10 +15,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "concurrently": "^8.2.2",
     "eslint": "^8.55.0",
     "prettier": "^3.1.1",
     "typescript": "^5.3.3"
   }
 }
-
