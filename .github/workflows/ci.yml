@@ -26,6 +26,9 @@ jobs:
       - name: install dependencies
         run: npm install
 
+      - name: Prisma generate
+        run: npm run prisma:generate --workspace=gateway
+        
       - name: lint
         run: npm run lint --if-present
 
