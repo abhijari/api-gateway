@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../utils/db';
-import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export const keysRouter = express.Router();
 
@@ -52,7 +52,7 @@ keysRouter.post('/', async (req: Request, res: Response) => {
       limitPerDay: apiKey.limitPerDay,
       createdAt: apiKey.createdAt,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Create API key error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
@@ -95,7 +95,7 @@ keysRouter.get('/', async (req: Request, res: Response) => {
         createdAt: key.createdAt,
       }))
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('List API keys error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
@@ -139,7 +139,7 @@ keysRouter.get('/:id', async (req: Request, res: Response) => {
       limitPerDay: apiKey.limitPerDay,
       createdAt: apiKey.createdAt,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get API key error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
@@ -154,7 +154,7 @@ keysRouter.patch('/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { active, limitPerMinute, limitPerDay } = req.body;
 
-    const updateData: any = {};
+    const updateData: { active?: boolean; limitPerMinute?: number; limitPerDay?: number } = {};
     if (typeof active === 'boolean') {
       updateData.active = active;
     }
@@ -179,8 +179,8 @@ keysRouter.patch('/:id', async (req: Request, res: Response) => {
       limitPerDay: apiKey.limitPerDay,
       createdAt: apiKey.createdAt,
     });
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
       res.status(404).json({
         error: 'Not Found',
         message: 'API key not found',
@@ -205,19 +205,12 @@ keysRouter.delete('/:id', async (req: Request, res: Response) => {
     });
 
     res.status(204).send();
-  } catch (error: any) {
-    if (error.code === 'P2025') {
-      res.status(404).json({
-        error: 'Not Found',
-        message: 'API key not found',
-      });
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      res.status(404).json({ error: 'Not Found', message: 'API key not found' });
       return;
     }
     console.error('Delete API key error:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to delete API key',
-    });
+    res.status(500).json({ error: 'Internal Server Error', message: 'Failed to delete API key' });
   }
 });
-

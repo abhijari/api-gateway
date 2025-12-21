@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../utils/db';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export const usersRouter = express.Router();
 
@@ -33,8 +34,8 @@ usersRouter.post('/', async (req: Request, res: Response) => {
       email: user.email,
       createdAt: user.createdAt,
     });
-  } catch (error: any) {
-    if (error.code === 'P2002') {
+  } catch (error: unknown) {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
       // Unique constraint violation
       const user = await prisma.user.findUnique({
         where: { email: req.body.email },
@@ -86,7 +87,7 @@ usersRouter.get('/by-email', async (req: Request, res: Response) => {
       email: user.email,
       createdAt: user.createdAt,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get user error:', error);
     res.status(500).json({
       error: 'Internal Server Error',

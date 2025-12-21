@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, {  Response } from 'express';
 import { apiKeyAuthMiddleware, RequestWithApiKey } from '../middleware/apiKeyAuth';
 import { rateLimitMiddleware } from '../middleware/rateLimit';
 import { forwardRequest } from '../utils/proxy';
@@ -38,7 +38,7 @@ proxyRouter.all('/*', async (req: RequestWithApiKey, res: Response) => {
             latencyMs,
           },
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           console.error('Failed to log usage:', err);
         });
     }
@@ -55,11 +55,10 @@ proxyRouter.all('/*', async (req: RequestWithApiKey, res: Response) => {
     });
 
     res.json(response.data);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Proxy error:', error);
     
     const statusCode = 502; // Bad Gateway
-    const latencyMs = Date.now() - Date.now(); // Will be 0 for errors
 
     // Log error usage
     if (req.apiKey) {
@@ -72,14 +71,14 @@ proxyRouter.all('/*', async (req: RequestWithApiKey, res: Response) => {
             latencyMs: 0,
           },
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           console.error('Failed to log usage:', err);
         });
     }
 
     res.status(statusCode).json({
       error: 'Bad Gateway',
-      message: error.message || 'Failed to forward request',
+      message: error instanceof Error ? error.message : 'Failed to forward request',
     });
   }
 });

@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, Method } from 'axios';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -9,7 +9,7 @@ export interface ProxyOptions {
   method: string;
   path: string;
   headers?: Record<string, string | string[] | undefined>;
-  body?: any;
+  body?: unknown;
   timeout?: number;
 }
 
@@ -46,7 +46,7 @@ export const forwardRequest = async (options: ProxyOptions): Promise<AxiosRespon
 
   // Prepare axios config
   const axiosConfig: AxiosRequestConfig = {
-    method: method.toLowerCase() as any,
+    method: method.toLowerCase() as Method,
     url,
     headers: filteredHeaders,
     timeout,
@@ -64,20 +64,9 @@ export const forwardRequest = async (options: ProxyOptions): Promise<AxiosRespon
   try {
     const response = await axios(axiosConfig);
     return response;
-  } catch (error: any) {
-    // Handle specific error codes with better messages
-    if (error.code === 'ECONNABORTED') {
-      throw new Error('Request timeout');
-    }
-    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      throw new Error('Unable to reach target server');
-    }
-    if (error.code === 'ECONNRESET') {
-      throw new Error('Connection was reset by the target server. This may be due to invalid request format or server-side issues.');
-    }
-    if (error.response) {
-      // If we got a response, return it (even if it's an error status)
-      return error.response;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      throw new Error(error.message);
     }
     throw error;
   }

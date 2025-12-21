@@ -1,11 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import {  Response } from 'express';
 import { RequestWithId } from './requestId';
 
 export const errorHandler = (
   err: Error,
   req: RequestWithId,
   res: Response,
-  next: NextFunction
 ): void => {
   const requestId = req.requestId || 'unknown';
   

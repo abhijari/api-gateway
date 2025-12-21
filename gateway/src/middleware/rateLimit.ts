@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { redis } from '../utils/redis';
 import { RequestWithApiKey } from './apiKeyAuth';
 

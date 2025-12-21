@@ -74,7 +74,7 @@ usageRouter.get('/:keyId', async (req: Request, res: Response) => {
       },
       recentLogs: logs,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get usage error:', error);
     res.status(500).json({
       error: 'Internal Server Error',
