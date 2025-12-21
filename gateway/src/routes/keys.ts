@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { prisma } from '../utils/db';
 import crypto from 'crypto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 export const keysRouter = express.Router();
 
@@ -68,7 +69,17 @@ keysRouter.get('/', async (req: Request, res: Response) => {
 
     const where = userId ? { userId: userId as string } : {};
 
-    const apiKeys = await prisma.apiKey.findMany({
+    type ApiKeyWithUser = Prisma.ApiKeyGetPayload<{
+      include: {
+        user: {
+          select: {
+            id: true;
+            email: true;
+          };
+        };
+      };
+    }>;
+    const apiKeys: ApiKeyWithUser[] = await prisma.apiKey.findMany({
       where,
       include: {
         user: {
