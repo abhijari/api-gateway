@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import { prisma } from '../utils/db';
 import crypto from 'crypto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { Prisma } from '@prisma/client';
 import { ApiKeyResponse } from '../types/api-keys.types';
 
 export const keysRouter = express.Router();
