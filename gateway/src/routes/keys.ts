@@ -3,6 +3,7 @@ import { prisma } from '../utils/db';
 import crypto from 'crypto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { Prisma } from '@prisma/client';
+import { ApiKeyResponse } from '../types/api-keys.types';
 
 export const keysRouter = express.Router();
 
@@ -69,17 +70,8 @@ keysRouter.get('/', async (req: Request, res: Response) => {
 
     const where = userId ? { userId: userId as string } : {};
 
-    type ApiKeyWithUser = Prisma.ApiKeyGetPayload<{
-      include: {
-        user: {
-          select: {
-            id: true;
-            email: true;
-          };
-        };
-      };
-    }>;
-    const apiKeys: ApiKeyWithUser[] = await prisma.apiKey.findMany({
+
+    const apiKeys = await prisma.apiKey.findMany({
       where,
       include: {
         user: {
@@ -94,18 +86,18 @@ keysRouter.get('/', async (req: Request, res: Response) => {
       },
     });
 
-    res.json(
-      apiKeys.map((key) => ({
-        id: key.id,
-        key: key.key,
-        userId: key.userId,
-        userEmail: key.user.email,
-        active: key.active,
-        limitPerMinute: key.limitPerMinute,
-        limitPerDay: key.limitPerDay,
-        createdAt: key.createdAt,
-      }))
-    );
+    const response: ApiKeyResponse[] = apiKeys.map((key) => ({
+      id: key.id,
+      key: key.key,
+      userId: key.userId,
+      userEmail: key.user.email,
+      active: key.active,
+      limitPerMinute: key.limitPerMinute,
+      limitPerDay: key.limitPerDay,
+      createdAt: key.createdAt,
+    }));
+    
+    res.json(response);
   } catch (error: unknown) {
     console.error('List API keys error:', error);
     res.status(500).json({
