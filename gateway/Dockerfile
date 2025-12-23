@@ -1,25 +1,46 @@
+# ---------- Build stage ----------
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy only dependency files first (better caching)
+COPY package.json package-lock.json ./
+
+# Copy workspace package.json
+COPY gateway/package.json ./gateway/package.json
+
+# Install deps for all workspaces
+RUN npm ci
+
+# Copy prisma
+COPY gateway/prisma ./gateway/prisma
+RUN npx prisma generate --schema=./gateway/prisma/schema.prisma
+
+# Copy source
+COPY gateway/tsconfig.json ./gateway/tsconfig.json
+COPY gateway/src ./gateway/src
+
+# Build only gateway
+RUN npm run build --workspace=gateway
+
+# ---------- Runtime stage ----------
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+ENV NODE_ENV=production
 
-# Install dependencies
-RUN npm install
+COPY package.json package-lock.json ./
+COPY gateway/package.json ./gateway/package.json
 
-# Copy Prisma schema
-COPY prisma ./prisma
+RUN npm ci --omit=dev
 
-# Generate Prisma Client
-RUN npx prisma generate
+COPY --from=builder /app/gateway/prisma ./gateway/prisma
 
-# Copy source code
-COPY . .
+RUN npx prisma generate --schema=./gateway/prisma/schema.prisma
 
-# Expose port
+COPY --from=builder /app/gateway/dist ./dist
+
 EXPOSE 3001
 
-# Default command (can be overridden in docker-compose)
-CMD ["npm", "run", "dev"]
-
+CMD ["node", "dist/index.js"]

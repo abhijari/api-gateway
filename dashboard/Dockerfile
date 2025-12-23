@@ -1,19 +1,29 @@
-FROM node:18-alpine
+# ---------- Build stage ----------
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY dashboard/package.json ./dashboard/package.json
 
-# Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy source code
-COPY . .
+COPY dashboard ./dashboard
+RUN npm run build --workspace=dashboard
 
-# Expose port
+# ---------- Runtime stage ----------
+FROM node:18-alpine
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json package-lock.json ./
+COPY dashboard/package.json ./dashboard/package.json
+
+RUN npm ci --workspace=dashboard --omit=dev
+
+COPY --from=builder /app/dashboard/.next ./dashboard/.next
+
 EXPOSE 3000
 
-# Default command (can be overridden in docker-compose)
-CMD ["npm", "run", "dev"]
-
+CMD ["npm", "run", "start", "--workspace=dashboard"]
