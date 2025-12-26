@@ -2,17 +2,18 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [main, develop]
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write   # REQUIRED for GHCR push
+
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -37,3 +38,35 @@ jobs:
 
       - name: build
         run: npm run build
+
+      # Login to GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build & Push Gateway Image
+      - name: Build & push gateway image
+        run: |
+          docker build \
+            -f gateway/Dockerfile \
+            -t ghcr.io/${{ github.repository }}-gateway:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}-gateway:latest \
+            .
+
+          docker push ghcr.io/${{ github.repository }}-gateway:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}-gateway:latest
+
+      # Build & Push Dashboard Image
+      - name: Build & push dashboard image
+        run: |
+          docker build \
+            -f dashboard/Dockerfile \
+            -t ghcr.io/${{ github.repository }}-dashboard:${{ github.sha }} \
+            -t ghcr.io/${{ github.repository }}-dashboard:latest \
+            .
+
+          docker push ghcr.io/${{ github.repository }}-dashboard:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}-dashboard:latest
