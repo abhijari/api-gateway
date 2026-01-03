@@ -43,4 +43,4 @@ COPY --from=builder /app/gateway/dist ./dist
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./gateway/prisma/schema.prisma && node dist/index.js"]
