@@ -1,5 +1,5 @@
 # ---------- Build stage ----------
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ COPY gateway/src ./gateway/src
 RUN npm run build --workspace=gateway
 
 # ---------- Runtime stage ----------
-FROM node:18-alpine
+FROM node:18-slim
 
 WORKDIR /app
 
