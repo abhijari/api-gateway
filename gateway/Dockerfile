@@ -1,7 +1,10 @@
 # ---------- Build stage ----------
-FROM node:18-slim AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
+
+# Install OpenSSL and other dependencies for Prisma
+RUN apk add --no-cache openssl openssl-dev libc6-compat
 
 # Copy only dependency files first (better caching)
 COPY package.json package-lock.json ./
@@ -24,9 +27,12 @@ COPY gateway/src ./gateway/src
 RUN npm run build --workspace=gateway
 
 # ---------- Runtime stage ----------
-FROM node:18-slim
+FROM node:18-alpine
 
 WORKDIR /app
+
+# Install OpenSSL and other dependencies for Prisma
+RUN apk add --no-cache openssl openssl-dev libc6-compat
 
 ENV NODE_ENV=production
 
