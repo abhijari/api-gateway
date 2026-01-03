@@ -1,0 +1,4 @@
+apiVerison: v1
+kind: namespace
+metadata:
+  name: api-gateway

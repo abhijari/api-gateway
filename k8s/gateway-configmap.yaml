@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: api-gateway
+data:
+  NODE_ENV: production
+  REDIS_URL="rediss://default:Ad5oAAIncDE5NjYzZDk2MDczZGY0NjNkOThkYWQxNGM4ODQ3ZTJhZXAxNTY5MzY@giving-tortoise-56936.upstash.io:6379"

@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  gateway:
+    image: ghcr.io/abhijari/api-gateway-gateway:latest
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.gateway
+    depends_on:
+      - redis
+
+  dashboard:
+    image: ghcr.io/abhijari/api-gateway-dashboard:latest
+    container_name: api-dashboard
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.dashboard
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
