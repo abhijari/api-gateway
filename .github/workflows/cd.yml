@@ -31,8 +31,8 @@ jobs:
             git reset --hard origin/main
             
             echo "Pulling latest images"
-            docker compose -f docker-compose.prod.yml pull
+            docker compose -f deploy/docker-compose.prod.yml pull
 
             echo "Applying deployment"
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f deploy/docker-compose.prod.yml up -d
           EOF
