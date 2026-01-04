@@ -25,6 +25,14 @@ jobs:
         run: |
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd /opt/api-gateway
+
+            echo "Pulling infra changes"
+            git fetch origin
+            git reset --hard origin/main
+            
+            echo "Pulling latest images"
             docker compose -f docker-compose.prod.yml pull
+
+            echo "Applying deployment"
             docker compose -f docker-compose.prod.yml up -d
           EOF
