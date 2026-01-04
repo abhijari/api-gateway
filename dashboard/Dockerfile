@@ -28,7 +28,6 @@ COPY dashboard/package.json ./dashboard/package.json
 RUN npm ci --workspace=dashboard --omit=dev
 
 COPY --from=builder /app/dashboard/.next ./dashboard/.next
-COPY --from=builder /app/dashboard/public ./dashboard/public
 
 EXPOSE 3000
 
