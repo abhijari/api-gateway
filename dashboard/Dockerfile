@@ -8,6 +8,11 @@ COPY dashboard/package.json ./dashboard/package.json
 
 RUN npm ci
 
+# ACCEPT BUILD ARG
+ARG NEXT_PUBLIC_GATEWAY_API_URL
+# EXPOSE TO NEXT BUILD
+ENV NEXT_PUBLIC_GATEWAY_API_URL=$NEXT_PUBLIC_GATEWAY_API_URL
+
 COPY dashboard ./dashboard
 RUN npm run build --workspace=dashboard
 
@@ -23,6 +28,7 @@ COPY dashboard/package.json ./dashboard/package.json
 RUN npm ci --workspace=dashboard --omit=dev
 
 COPY --from=builder /app/dashboard/.next ./dashboard/.next
+COPY --from=builder /app/dashboard/public ./dashboard/public
 
 EXPOSE 3000
 
