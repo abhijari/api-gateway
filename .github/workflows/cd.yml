@@ -23,16 +23,19 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            export IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
+
             cd /opt/api-gateway
 
-            echo "Pulling infra changes"
-            git fetch origin
-            git reset --hard origin/main
-            
+            echo "Deploying image tag: \$IMAGE_TAG"
+
             echo "Pulling latest images"
-            docker compose -f deploy/docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull
 
             echo "Applying deployment"
-            docker compose -f deploy/docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d
+
+            echo "Cleaning old images"
+            docker image prune -f
           EOF

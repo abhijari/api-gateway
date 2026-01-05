@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   gateway:
-    image: ghcr.io/abhijari/api-gateway-gateway:latest
+    image: ghcr.io/abhijari/api-gateway-gateway:${IMAGE_TAG}
     container_name: api-gateway
     restart: always
     ports:
@@ -13,7 +13,7 @@ services:
       - redis
 
   dashboard:
-    image: ghcr.io/abhijari/api-gateway-dashboard:latest
+    image: ghcr.io/abhijari/api-gateway-dashboard:${IMAGE_TAG}
     container_name: api-dashboard
     restart: always
     ports:
