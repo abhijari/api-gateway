@@ -24,7 +24,21 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
-            export IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
+            set -e
+
+            NEW_TAG=${{ github.event.workflow_run.head_sha }}
+            STATE_DIR=/opt/deploy-state
+
+            mkdir -p \$STATE_DIR
+
+            if [ -f "\$STATE_DIR/current_image_tag" ]; then
+              cp \$STATE_DIR/current_image_tag \$STATE_DIR/previous_image_tag
+            fi
+
+            echo "\$NEW_TAG" > \$STATE_DIR/current_image_tag
+            export IMAGE_TAG=\$NEW_TAG
+
+            echo "Deploying image: \$IMAGE_TAG"
 
             cd /opt/api-gateway
 
