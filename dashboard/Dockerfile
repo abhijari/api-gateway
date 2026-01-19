@@ -32,7 +32,7 @@ COPY --from=builder /app/dashboard/.next ./dashboard/.next
 EXPOSE 3000
 
 # Runtime entrypoint
-COPY docker/dashboard-entrypoint.sh /entrypoint.sh
+COPY dashboard/dashboard-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
