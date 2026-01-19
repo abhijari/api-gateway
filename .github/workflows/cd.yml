@@ -22,9 +22,14 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY_STAGING }}" > ~/.ssh/id_ed25519
+
+          cat <<'EOF' > ~/.ssh/id_ed25519
+          ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          EOF
+
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.EC2_HOST_STAGING }} >> ~/.ssh/known_hosts
+
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy to STAGING
         run: |
