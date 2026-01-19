@@ -42,6 +42,8 @@ resource "aws_instance" "app" {
 
   user_data = file("${path.module}/user_data.sh")
 
+  key_name = "api-gateway-app"
+
   tags = {
     Name = "${var.env}-api-gateway"
   }
