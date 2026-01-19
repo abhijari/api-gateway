@@ -1,0 +1,19 @@
+env           = "dev"
+instance_type = "t2.micro"
+
+gateway_config = {
+  NODE_ENV   = "development"
+  RATE_LIMIT = "50"
+  REDIS_HOST = "redis"
+  REDIS_PORT = 6379
+}
+
+gateway_secrets = {
+  DATABASE_URL = "<REQUIRED>"
+}
+
+dashboard_config = {
+  DATABASE_URL = "<REQUIRED>"
+}
+
+dashboard_secrets = {}

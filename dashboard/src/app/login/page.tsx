@@ -16,8 +16,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Create or get user from backend
-      const GATEWAY_API_URL = process.env.NEXT_PUBLIC_GATEWAY_API_URL || 'http://localhost:3001';
+      // Create or get user from backend. Use runtime config endpoint to
+      // obtain the gateway URL (no build-time NEXT_PUBLIC_* dependency).
+      const cfgRes = await fetch('/api/runtime-config', { cache: 'no-store' });
+      if (!cfgRes.ok) throw new Error('Failed to fetch runtime config');
+      const cfg = await cfgRes.json();
+      const GATEWAY_API_URL = cfg.gatewayApiUrl || 'http://localhost:3001';
       const response = await fetch(`${GATEWAY_API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

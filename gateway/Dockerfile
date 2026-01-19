@@ -49,4 +49,8 @@ COPY --from=builder /app/gateway/dist ./dist
 
 EXPOSE 3001
 
+COPY gateway/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["sh", "-c", "npx prisma migrate deploy --schema=./gateway/prisma/schema.prisma && node dist/index.js"]

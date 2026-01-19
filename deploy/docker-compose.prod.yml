@@ -7,8 +7,8 @@ services:
     restart: always
     ports:
       - "3001:3001"
-    env_file:
-      - .env.gateway
+    environment:
+      - ENV=${ENV}
     depends_on:
       - redis
 
@@ -18,6 +18,8 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    environment:
+      - ENV=${ENV}
 
   redis:
     image: redis:7-alpine

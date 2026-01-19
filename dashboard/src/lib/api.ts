@@ -1,5 +1,3 @@
-import { GATEWAY_API_URL } from './utils';
-
 export interface ApiKey {
   id: string;
   key: string;
@@ -38,13 +36,44 @@ export interface User {
   createdAt: string;
 }
 
+// Fetch runtime gateway URL once and cache it in-memory on the client.
+// The runtime URL is returned by the server route `/api/runtime-config` which
+// reads `process.env.GATEWAY_API_URL` at runtime (no NEXT_PUBLIC_* usage).
+let cachedGatewayUrl: string | null = null;
+let fetchingGatewayUrl: Promise<string> | null = null;
+
+async function getGatewayUrl(): Promise<string> {
+  if (cachedGatewayUrl) return cachedGatewayUrl;
+  if (fetchingGatewayUrl) return fetchingGatewayUrl;
+
+  fetchingGatewayUrl = (async () => {
+    const res = await fetch('/api/runtime-config', { cache: 'no-store' });
+    if (!res.ok) {
+      fetchingGatewayUrl = null;
+      throw new Error('Failed to fetch runtime config');
+    }
+    const data = await res.json();
+    const url = data.gatewayApiUrl;
+    if (!url) {
+      fetchingGatewayUrl = null;
+      throw new Error('GATEWAY_API_URL is not configured on the server');
+    }
+    cachedGatewayUrl = url;
+    fetchingGatewayUrl = null;
+    return url;
+  })();
+
+  return fetchingGatewayUrl;
+}
+
 // API Key endpoints
 export async function createApiKey(
   userId: string,
   limitPerMinute = 60,
   limitPerDay = 10000
 ): Promise<ApiKey> {
-  const response = await fetch(`${GATEWAY_API_URL}/keys`, {
+  const gatewayUrl = await getGatewayUrl();
+  const response = await fetch(`${gatewayUrl}/keys`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, limitPerMinute, limitPerDay }),
@@ -58,9 +87,8 @@ export async function createApiKey(
 }
 
 export async function getApiKeys(userId?: string): Promise<ApiKey[]> {
-  const url = userId
-    ? `${GATEWAY_API_URL}/keys?userId=${userId}`
-    : `${GATEWAY_API_URL}/keys`;
+  const gatewayUrl = await getGatewayUrl();
+  const url = userId ? `${gatewayUrl}/keys?userId=${userId}` : `${gatewayUrl}/keys`;
   const response = await fetch(url, { cache: 'no-store' });
 
   if (!response.ok) {
@@ -71,7 +99,8 @@ export async function getApiKeys(userId?: string): Promise<ApiKey[]> {
 }
 
 export async function getApiKey(id: string): Promise<ApiKey> {
-  const response = await fetch(`${GATEWAY_API_URL}/keys/${id}`, {
+  const gatewayUrl = await getGatewayUrl();
+  const response = await fetch(`${gatewayUrl}/keys/${id}`, {
     cache: 'no-store',
   });
 
@@ -86,7 +115,8 @@ export async function updateApiKey(
   id: string,
   data: { active?: boolean; limitPerMinute?: number; limitPerDay?: number }
 ): Promise<ApiKey> {
-  const response = await fetch(`${GATEWAY_API_URL}/keys/${id}`, {
+  const gatewayUrl = await getGatewayUrl();
+  const response = await fetch(`${gatewayUrl}/keys/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -100,7 +130,8 @@ export async function updateApiKey(
 }
 
 export async function deleteApiKey(id: string): Promise<void> {
-  const response = await fetch(`${GATEWAY_API_URL}/keys/${id}`, {
+  const gatewayUrl = await getGatewayUrl();
+  const response = await fetch(`${gatewayUrl}/keys/${id}`, {
     method: 'DELETE',
   });
 
@@ -111,7 +142,8 @@ export async function deleteApiKey(id: string): Promise<void> {
 
 // Usage endpoints
 export async function getUsageStats(keyId: string): Promise<UsageStats> {
-  const response = await fetch(`${GATEWAY_API_URL}/usage/${keyId}`, {
+  const gatewayUrl = await getGatewayUrl();
+  const response = await fetch(`${gatewayUrl}/usage/${keyId}`, {
     cache: 'no-store',
   });
 

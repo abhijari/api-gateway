@@ -50,6 +50,7 @@ coverage/
 next-env.d.ts
 
 deploy/.env.*
+infra/aws/envs/*.tfvars
 
 # Terraform
 .terraform/

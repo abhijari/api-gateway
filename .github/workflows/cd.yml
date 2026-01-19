@@ -1,55 +1,87 @@
-name: CD
+name: CD (Promotion Based)
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
 
 jobs:
-  deploy:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: staging
 
     steps:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          echo "${{ secrets.EC2_SSH_KEY_STAGING }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST_STAGING }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to EC2
+      - name: Deploy to STAGING
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh ${{ secrets.EC2_USER_STAGING }}@${{ secrets.EC2_HOST_STAGING }} << EOF
             set -e
 
-            NEW_TAG=${{ github.event.workflow_run.head_sha }}
+            IMAGE_TAG=${{ github.sha }}
             STATE_DIR=/opt/deploy-state
-
             mkdir -p \$STATE_DIR
 
             if [ -f "\$STATE_DIR/current_image_tag" ]; then
               cp \$STATE_DIR/current_image_tag \$STATE_DIR/previous_image_tag
             fi
 
-            echo "\$NEW_TAG" > \$STATE_DIR/current_image_tag
-            export IMAGE_TAG=\$NEW_TAG
-
-            echo "Deploying image: \$IMAGE_TAG"
+            echo "\$IMAGE_TAG" > \$STATE_DIR/current_image_tag
+            export IMAGE_TAG=\$IMAGE_TAG
+            export ENV=dev
 
             cd /opt/api-gateway
 
-            echo "Deploying image tag: \$IMAGE_TAG"
-
-            echo "Pulling latest images"
             docker compose -f docker-compose.prod.yml pull
-
-            echo "Applying deployment"
             docker compose -f docker-compose.prod.yml up -d
 
-            echo "Cleaning old images"
+            docker image prune -f
+          EOF
+
+  deploy-production:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    needs: deploy-staging
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY_PROD }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.EC2_HOST_PROD }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to PRODUCTION
+        run: |
+          ssh ${{ secrets.EC2_USER_PROD }}@${{ secrets.EC2_HOST_PROD }} << EOF
+            set -e
+
+            IMAGE_TAG=${GITHUB_REF#refs/tags/}
+            STATE_DIR=/opt/deploy-state
+            mkdir -p \$STATE_DIR
+
+            if [ -f "\$STATE_DIR/current_image_tag" ]; then
+              cp \$STATE_DIR/current_image_tag \$STATE_DIR/previous_image_tag
+            fi
+
+            echo "\$IMAGE_TAG" > \$STATE_DIR/current_image_tag
+            export IMAGE_TAG=\$IMAGE_TAG
+            export ENV=prod
+            cd /opt/api-gateway
+
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+
             docker image prune -f
           EOF
