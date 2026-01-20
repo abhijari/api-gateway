@@ -4,7 +4,7 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Install OpenSSL and other dependencies for Prisma
-RUN apk add --no-cache openssl openssl-dev libc6-compat
+RUN apk add --no-cache openssl openssl-dev libc6-compat aws-cli
 
 # Copy only dependency files first (better caching)
 COPY package.json package-lock.json ./

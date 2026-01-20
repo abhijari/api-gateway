@@ -3,6 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+RUN apk add --no-cache aws-cli
+
 COPY package.json package-lock.json ./
 COPY dashboard/package.json ./dashboard/package.json
 
