@@ -21,7 +21,10 @@ export default function LoginPage() {
       const cfgRes = await fetch('/api/runtime-config', { cache: 'no-store' });
       if (!cfgRes.ok) throw new Error('Failed to fetch runtime config');
       const cfg = await cfgRes.json();
-      const GATEWAY_API_URL = cfg.gatewayApiUrl || 'http://localhost:3001';
+      if (!cfg.gatewayApiUrl) {
+        throw new Error('GATEWAY_API_URL missing from runtime config');
+      }
+      const GATEWAY_API_URL = cfg.gatewayApiUrl;
       const response = await fetch(`${GATEWAY_API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

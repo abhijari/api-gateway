@@ -53,6 +53,9 @@ async function getGatewayUrl(): Promise<string> {
       throw new Error('Failed to fetch runtime config');
     }
     const data = await res.json();
+    if (!data.gatewayApiUrl) {
+      throw new Error('GATEWAY_API_URL missing from runtime config');
+    }
     const url = data.gatewayApiUrl;
     if (!url) {
       fetchingGatewayUrl = null;
