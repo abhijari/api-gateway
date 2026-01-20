@@ -32,7 +32,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Install OpenSSL and other dependencies for Prisma
-RUN apk add --no-cache openssl openssl-dev libc6-compat
+RUN apk add --no-cache openssl openssl-dev libc6-compat aws-cli
 
 ENV NODE_ENV=production
 
