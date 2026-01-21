@@ -236,14 +236,3 @@ If you understand this project, you can:
 If you’re reviewing this repo as a hiring manager:
 
 > This project was designed to demonstrate **systems thinking**, **security awareness**, and **production-grade DevOps practices**, not just tool usage.
-
----
-
-If you want, next I can:
-
-* add architecture diagrams
-* add rollout / rollback docs
-* convert this into a case-study style blog
-* prepare interview talking points from this project
-
-Just say the word 🚀
