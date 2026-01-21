@@ -1,135 +1,208 @@
-# API Gateway Platform
+# API Gateway Platform (0 → Hero)
 
-A Mini AWS API Gateway clone built with Node.js, Express, Next.js, and PostgreSQL.
+A mini AWS API Gateway–style platform: **API key auth**, **rate limiting**, **reverse proxy**, and a **dashboard** to manage keys + view usage.
 
-## Project Structure
+If you want the deep dive, see **`ARCHITECTURE.md`**.
 
+## What You Get
+
+- **Reverse proxy**: `ALL /proxy/*` forwards to your upstream (`INTERNAL_API_BASE_URL`)
+- **API key auth**: `X-API-Key` header or `?api_key=...`
+- **Rate limits**: per-minute + per-day (Redis)
+- **Usage logs**: latency + status codes (Postgres)
+- **Dashboard UI**: create keys, view logs, view per-key stats
+
+## Repo Layout
+
+```text
+api-gateway/
+  gateway/        # Express API gateway (TS) + Prisma
+  dashboard/      # Next.js dashboard (App Router)
+  shared/         # Shared types/utils (optional)
+  docker/         # Entrypoints + env loaders
+  k8s/            # Kubernetes manifests
+  infra/aws/      # Terraform modules (IAM/SSM/EC2)
+  deploy/         # Production docker-compose (GHCR images)
+  docker-compose.yml
 ```
-api-gateway-platform/
-├── gateway/          # Backend API Gateway (Node.js + Express + TypeScript)
-├── dashboard/        # Frontend Dashboard (Next.js 14 + TypeScript + TailwindCSS)
-├── shared/           # Shared types and utilities
-└── docker-compose.yml
-```
-
-## Features
-
-- 🔄 Reverse proxy with request forwarding
-- 🔑 API key management and validation
-- 📊 Usage logging and analytics
-- ⚡ Rate limiting with Redis
-- 🎨 Modern dashboard UI
 
 ## Tech Stack
 
-### Backend
-- Node.js + TypeScript
-- Express
-- Neon PostgreSQL (Prisma ORM)
-- Redis
+- **Gateway**: Node.js + Express + TypeScript + Prisma
+- **DB**: PostgreSQL
+- **Rate limit store**: Redis
+- **Dashboard**: Next.js 14 + Tailwind + shadcn/ui
 
-### Frontend
-- Next.js 14 (App Router)
-- TypeScript
-- TailwindCSS
-- ShadCN UI
+## Quickstart (Recommended): Docker Compose
 
-## Getting Started
+### Prereqs
+- Docker + Docker Compose
 
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local development)
+### Start everything
 
-### Quick Start
+```bash
+docker-compose up
+```
 
-1. Clone the repository
-2. Copy environment files:
-   ```bash
-   cp gateway/.env.example gateway/.env
-   cp dashboard/.env.example dashboard/.env
-   ```
+This starts:
+- Postgres on `localhost:5432`
+- Redis on `localhost:6379`
+- Gateway on `localhost:3001`
+- Dashboard on `localhost:3000`
 
-3. Start all services:
-   ```bash
-   docker-compose up
-   ```
+### First run (create key + test proxy)
+- Open dashboard: `http://localhost:3000/login`
+- Login with any email (creates/gets a user)
+- Create an API key (copy it — you may only see it once)
 
-   This will:
-   - Start PostgreSQL database
-   - Start Redis for rate limiting
-   - Start the Gateway backend (runs migrations automatically)
-   - Start the Dashboard frontend
+Test the gateway:
 
-4. Access the services:
-   - Gateway API: http://localhost:3001
-   - Dashboard: http://localhost:3000
+```bash
+curl -H "X-API-Key: YOUR_API_KEY" \
+  http://localhost:3001/proxy/posts/1
+```
 
-5. First-time setup:
-   - Visit http://localhost:3000/login
-   - Enter your email to create/login
-   - Create your first API key from the dashboard
-   - Use the API key to make requests through the gateway
+By default (compose), the gateway proxies to `https://jsonplaceholder.typicode.com`.
 
-### Development
+## Local Development (No Docker)
 
-#### Backend (Gateway)
+### 1) Start Postgres + Redis
+- Run locally, or use Docker for just dependencies.
+
+### 2) Gateway
+
 ```bash
 cd gateway
 npm install
+cp .env.example .env
+npm run prisma:generate
+npm run prisma:migrate
 npm run dev
 ```
 
-#### Frontend (Dashboard)
+### 3) Dashboard
+
 ```bash
 cd dashboard
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-## Environment Variables
+## Configuration
 
-See `.env.example` files in each subdirectory for required environment variables.
+### Gateway env (typical)
+- **`PORT`**: default `3001`
+- **`DATABASE_URL`**: Postgres connection string
+- **`REDIS_URL`**: full redis URL (optional)
+- **`REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`**: redis parts (if no `REDIS_URL`)
+- **`INTERNAL_API_BASE_URL`**: upstream base URL for proxying
 
-## API Endpoints
+### Dashboard env (runtime)
+- **`GATEWAY_API_URL`**: base URL of the gateway (e.g. `http://localhost:3001`)
 
-### Gateway Proxy
-- `ALL /proxy/*` - Forward requests to internal APIs
-  - Requires `X-API-Key` header or `api_key` query parameter
-  - Example: `GET http://localhost:3001/proxy/users?X-API-Key=your_key_here`
+The dashboard reads this at runtime via `GET /api/runtime-config` so you don’t need `NEXT_PUBLIC_*`.
 
-### User Management
-- `POST /users` - Create or get user by email
-- `GET /users/by-email?email=...` - Get user by email
+## Gateway API Reference
 
-### API Key Management
-- `POST /keys` - Generate new API key
-  - Body: `{ userId, limitPerMinute?, limitPerDay? }`
-- `GET /keys` - List all API keys (or filter by `?userId=...`)
-- `GET /keys/:id` - Get single API key
-- `PATCH /keys/:id` - Update API key (active, limitPerMinute, limitPerDay)
-- `DELETE /keys/:id` - Delete API key
+### Health
+- `GET /health`
 
-### Usage Statistics
-- `GET /usage/:keyId` - Get usage statistics for an API key
-  - Returns: statistics (total, successful, failed requests, avg latency) and recent logs
+### Proxy (requires API key)
+- `ALL /proxy/*`
 
-## Usage Example
+### Users
+- `POST /users` body: `{ "email": "you@example.com" }`
+- `GET /users/by-email?email=you@example.com`
 
-1. **Create a user and API key via Dashboard:**
-   - Login at http://localhost:3000/login
-   - Go to Dashboard and create an API key
+### API Keys
+- `POST /keys` body: `{ userId, limitPerMinute?, limitPerDay? }`
+- `GET /keys` (optional `?userId=...`)
+- `GET /keys/:id`
+- `PATCH /keys/:id` body: `{ active?, limitPerMinute?, limitPerDay? }`
+- `DELETE /keys/:id`
 
-2. **Make a proxied request:**
-   ```bash
-   curl -H "X-API-Key: your_api_key_here" \
-        http://localhost:3001/proxy/users
-   ```
+### Usage
+- `GET /usage/:keyId` (optional `?limit=50`)
 
-3. **View usage statistics:**
-   - Visit http://localhost:3000/dashboard/usage/[keyId]
-   - Or call `GET /usage/:keyId` API endpoint
+## Production Deployment Options
+
+### Primary: VM (Docker) — recommended
+This repo is set up primarily for **running on a VM** (EC2 or any Linux VM) using Docker + Docker Compose, with prebuilt images in GHCR.
+
+#### VM prerequisites
+- A Linux VM (Ubuntu/Debian recommended)
+- Docker + Docker Compose plugin installed
+- Inbound ports opened (typical):
+  - `80/443` (if you add a reverse proxy like Nginx/Caddy)
+  - `3000` (dashboard) and `3001` (gateway) if exposing directly
+  - `6379` only if Redis is external and you need to reach it (don’t expose publicly)
+
+#### 1) Copy production compose to the VM
+Use `deploy/docker-compose.prod.yml` on your VM (rename to `docker-compose.yml` if you like).
+
+#### 2) Configure environment
+`deploy/docker-compose.prod.yml` expects:
+- `IMAGE_TAG` (example: `latest`)
+- `ENV` (your environment identifier)
+
+You also need to provide runtime config for the services (gateway + dashboard). The simplest approach on a VM is to create a `.env` file next to your compose file and pass env vars through compose.
+
+At minimum, ensure the gateway has:
+- `DATABASE_URL`
+- `REDIS_URL` (or `REDIS_HOST`/`REDIS_PORT`/`REDIS_PASSWORD`)
+- `INTERNAL_API_BASE_URL`
+
+And the dashboard has:
+- `GATEWAY_API_URL` (example: `http://<vm-ip-or-domain>:3001`)
+
+#### 3) Start
+From the directory containing the compose file:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+#### 4) Verify
+- Gateway health: `GET http://<host>:3001/health`
+- Dashboard: `http://<host>:3000`
+
+#### Logs / troubleshooting on VM
+
+```bash
+docker compose logs -f gateway
+docker compose logs -f dashboard
+```
+
+#### Updating (VM)
+To update to a new image tag:
+
+```bash
+export IMAGE_TAG=latest
+docker compose pull
+docker compose up -d
+```
+
+### Terraform (AWS) for VM provisioning
+See `infra/aws/` for IAM + SSM + EC2 building blocks.
+
+### Kubernetes (optional)
+`k8s/` is provided as an optional path, but the primary production setup for this project is **VM + Docker**.
+
+## Troubleshooting
+
+- **Ports busy (3000/3001/5432/6379)**: stop conflicting services or update ports in `docker-compose.yml`.
+- **DB migration issues**:
+  - `cd gateway && npm run prisma:generate && npm run prisma:migrate`
+- **Redis issues**:
+  - verify redis is reachable; gateway rate limiting fails open on redis errors.
+
+## Security Notes
+
+- Never commit real credentials (DB/Redis URLs, passwords, tokens) into git.
+- Prefer injecting secrets via CI, or storing them in **SSM/Secrets Manager** and loading them on the VM at boot.
 
 ## License
 
 MIT
-
