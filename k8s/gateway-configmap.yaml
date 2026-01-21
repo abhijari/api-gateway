@@ -5,4 +5,6 @@ metadata:
   namespace: api-gateway
 data:
   NODE_ENV: production
-  REDIS_URL="rediss://default:Ad5oAAIncDE5NjYzZDk2MDczZGY0NjNkOThkYWQxNGM4ODQ3ZTJhZXAxNTY5MzY@giving-tortoise-56936.upstash.io:6379"
+  # Example only. Do NOT commit real credentials.
+  # Prefer setting REDIS_URL via Secret instead.
+  REDIS_URL: "redis://HOST:6379"
