@@ -1,15 +1,3 @@
-Perfect — this is exactly how you **signal senior-level DevOps thinking** from a GitHub repo.
-
-Below is a **production-grade README.md** you can copy-paste directly.
-It is written so that **a hiring manager / DevOps lead immediately understands**:
-
-* you know **real CI/CD**
-* you understand **security & secrets**
-* you didn’t blindly jump to Kubernetes
-* you can **design systems**, not just write YAML
-
----
-
 # 🚀 API Gateway Platform — Production-Grade DevOps Project
 
 > **A real-world VM-based CI/CD system built the way tech companies do *before* Kubernetes.**
