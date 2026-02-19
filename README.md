@@ -208,17 +208,6 @@ This project intentionally **does not hide complexity behind Kubernetes**.
 
 ---
 
-## 🛣 Roadmap
-
-* [x] VM-based CI/CD
-* [x] Runtime secrets via SSM
-* [x] Terraform infra
-* [ ] Health-check gated deployments
-* [ ] Blue-green deploy on VM
-* [ ] Kubernetes migration (same architecture)
-
----
-
 ## 🧑‍💻 About This Project
 
 This repository reflects **how modern engineering teams actually deploy systems**, not simplified tutorials.
